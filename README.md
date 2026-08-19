@@ -18,7 +18,6 @@ The original rewrites every message into plain English, configured once via env 
 - **Any target language** — the system prompt is parametric (`/claudish language german`, default English) instead of hardcoding English.
 - **Summary, not just simplification** — the prompt asks for a clearly shorter TL;DR (about half the original or less), keeping facts, numbers, and file paths.
 - **`/claudish last`** — reprints the untouched original of the last message from the transcript, the escape hatch for `replace` mode. Such replies carry a `<!-- claudish:original -->` marker the hook strips and never summarises.
-- **Localised separator labels** — "TL;DR:" for English, "In italiano semplice:" for Italian, a generic label for everything else.
 
 ## Requirements
 

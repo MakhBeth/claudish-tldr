@@ -101,11 +101,7 @@ if [ -f "$lang_file" ]; then
 fi
 
 BUF_ROOT="${TMPDIR:-/tmp}/claudish-tldr"
-case "$TARGET_LANG" in
-  [Ee]nglish) SEP=$'\n\n────────────────────────\n💬 TL;DR:\n\n' ;;
-  [Ii]talian|[Ii]taliano) SEP=$'\n\n────────────────────────\n💬 In italiano semplice:\n\n' ;;
-  *) SEP=$'\n\n────────────────────────\n'"💬 In simple $TARGET_LANG:"$'\n\n' ;;
-esac
+SEP=$'\n\n────────────────────────\n💬 TL;DR:\n\n'
 
 mkdir -p "$BUF_ROOT" 2>/dev/null || true
 
