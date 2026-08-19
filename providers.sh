@@ -27,6 +27,11 @@
 #
 # Extra config:
 #   CLAUDISH_MODEL          overrides the per-provider default model
+#   CLAUDISH_RUNTIME_FILE   key=value file written by /claudish
+#                           (claudish-ctl.sh); its model= key overrides
+#                           CLAUDISH_MODEL and is re-read per message, so the
+#                           model switches mid-session (default
+#                           ~/.claude/claudish-runtime)
 #   CLAUDISH_MAX_TOKENS     completion cap for the anthropic provider (default
 #                           4096; the Messages API requires an explicit cap)
 #   CLAUDISH_OPENAI_EFFORT  reasoning_effort for the openai provider. Unset
@@ -75,6 +80,14 @@ case "$PROVIDER" in
   openai)    MODEL="${CLAUDISH_MODEL:-gpt-5.6-luna}" ;;
   *)         MODEL="${CLAUDISH_MODEL:-gemma4:26b-mlx}" ;;
 esac
+
+# Runtime model override written by /claudish (claudish-ctl.sh): unlike the
+# env, the runtime file's model= key can be re-read on every message.
+# Sanitised to the characters model names use, and capped, since it lands in
+# the request body.
+_pm_f="${CLAUDISH_RUNTIME_FILE:-${HOME:-}/.claude/claudish-runtime}"
+_pm="$(sed -n 's/^model=//p' "$_pm_f" 2>/dev/null | head -n1 | tr -cd 'A-Za-z0-9:._/-' | head -c 64)"
+[ -n "$_pm" ] && MODEL="$_pm"
 
 # Split the "\n<status>" suffix appended by curl -w '\n%{http_code}' off $resp
 # into $http. "000" (no response at all) is normalized to "".

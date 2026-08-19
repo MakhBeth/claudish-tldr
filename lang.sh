@@ -8,6 +8,12 @@
 # leaves the rewrite in whatever language the text it rewrites is already
 # written in. English is not a default here, only one possible answer.
 # First non-empty source wins:
+#   0. language= in the runtime file      written by the /claudish command
+#                                         (claudish-ctl.sh); re-read per
+#                                         message, so the language switches
+#                                         mid-session while the env cannot
+#                                         (default ~/.claude/claudish-runtime,
+#                                         path: CLAUDISH_RUNTIME_FILE)
 #   1. CLAUDISH_LANG                      explicit override. Set but EMPTY
 #                                         ignores the settings below and keeps
 #                                         the text's own language; set it to
@@ -42,6 +48,15 @@ _claudish_lang_clean() {
 }
 
 claudish_language() {
+  # Runtime override written by /claudish (claudish-ctl.sh): unlike the env,
+  # the runtime file can be re-read on every message. Its content is user
+  # text, so it goes through the same cleaning as every other source before
+  # it lands in the prompt. Missing file/key/value -> fall through to the env.
+  _cl_ff="${CLAUDISH_RUNTIME_FILE:-${HOME:-}/.claude/claudish-runtime}"
+  _cl_v="$(sed -n 's/^language=//p' "$_cl_ff" 2>/dev/null | head -n1 | head -c 200)"
+  _cl_v="$(_claudish_lang_clean "$_cl_v")"
+  if [ -n "$_cl_v" ]; then printf '%s' "$_cl_v"; return 0; fi
+
   # An explicitly set CLAUDISH_LANG always wins, including an explicitly EMPTY
   # one — the escape hatch for keeping rewrites in English on a session that
   # speaks something else.
