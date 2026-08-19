@@ -13,6 +13,8 @@
 #   replace       summary only (and turn on)
 #   language X    rewrite into language X, e.g. "language french"
 #                 (no name / "default" resets to English; also turns on)
+#   model X       use ollama model X, e.g. "model gemma4:12b"
+#                 (no name / "default" resets to the env/default model)
 #   last          print the ORIGINAL text of the last assistant message, taken
 #                 from the most recent session transcript (useful in replace
 #                 mode; ctrl+o shows the whole original chat)
@@ -26,6 +28,13 @@ set -uo pipefail
 OFF_FILE="${CLAUDISH_OFF_FILE:-$HOME/.claude/claudish-off}"
 MODE_FILE="${CLAUDISH_MODE_FILE:-$HOME/.claude/claudish-mode}"
 LANG_FILE="${CLAUDISH_LANG_FILE:-$HOME/.claude/claudish-lang}"
+MODEL_FILE="${CLAUDISH_MODEL_FILE:-$HOME/.claude/claudish-model}"
+
+current_model() {
+  m=""
+  [ -f "$MODEL_FILE" ] && m="$(head -c 128 "$MODEL_FILE" 2>/dev/null | tr -cd 'A-Za-z0-9:._/-' | head -c 64)"
+  [ -n "$m" ] && printf '%s' "$m" || printf '%s' "${CLAUDISH_MODEL:-gemma4:26b-mlx}"
+}
 
 current_lang() {
   l=""
@@ -76,6 +85,15 @@ case "$cmd" in
     esac
     rm -f "$OFF_FILE"
     ;;
+  model)
+    # Sanitise to the characters ollama model names use.
+    m="$(printf '%s' "${2:-}" | tr -cd 'A-Za-z0-9:._/-' | head -c 64)"
+    case "$m" in
+      ''|default|Default) rm -f "$MODEL_FILE" ;;
+      *) printf '%s\n' "$m" > "$MODEL_FILE" ;;
+    esac
+    rm -f "$OFF_FILE"
+    ;;
   status)  ;;
   cycle)
     case "$(state)" in
@@ -85,9 +103,9 @@ case "$cmd" in
     esac
     ;;
   *)
-    printf 'claudish-ctl: unknown command "%s" (use on|off|append|replace|language [name]|last|status|cycle)\n' "$cmd" >&2
+    printf 'claudish-ctl: unknown command "%s" (use on|off|append|replace|language [name]|model [name]|last|status|cycle)\n' "$cmd" >&2
     exit 2
     ;;
 esac
 
-printf 'claudish: %s (%s)\n' "$(state)" "$(current_lang)"
+printf 'claudish: %s (%s, %s)\n' "$(state)" "$(current_lang)" "$(current_model)"

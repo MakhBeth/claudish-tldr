@@ -43,6 +43,8 @@
 #                                          ~/.claude/claudish-lang) — lets
 #                                          /claudish language X switch mid-session
 #   CLAUDISH_MODEL     <ollama model> (default gemma4:26b-mlx)
+#   CLAUDISH_MODEL_FILE <path>        file re-read per message that overrides
+#                                     CLAUDISH_MODEL (default ~/.claude/claudish-model)
 #   CLAUDISH_OLLAMA    <base url>     (default http://localhost:11434)
 #   CLAUDISH_MIN_CHARS <n>            skip messages shorter than this
 #                                           (prose, code stripped) (default 200)
@@ -74,6 +76,13 @@ if [ -f "$mode_file" ]; then
   esac
 fi
 MODEL="${CLAUDISH_MODEL:-gemma4:26b-mlx}"
+# Runtime model override, same file trick as mode and language. Sanitised to
+# the characters ollama model names use, and capped.
+model_file="${CLAUDISH_MODEL_FILE:-$HOME/.claude/claudish-model}"
+if [ -f "$model_file" ]; then
+  m="$(head -c 128 "$model_file" 2>/dev/null | tr -cd A-Za-z0-9:._/- | head -c 64)"
+  [ -n "$m" ] && MODEL="$m"
+fi
 OLLAMA="${CLAUDISH_OLLAMA:-http://localhost:11434}"
 MIN_CHARS="${CLAUDISH_MIN_CHARS:-200}"
 STUB="${CLAUDISH_STUB:-0}"

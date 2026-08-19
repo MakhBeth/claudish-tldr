@@ -1,6 +1,6 @@
 ---
-description: Switch the rewrite on the fly — on, off, append, replace, "language <name>", or "last" to reprint the original of the last message (no argument cycles off → append → replace)
-argument-hint: "[on|off|append|replace|language <name>|last|status]"
+description: Switch the rewrite on the fly — on, off, append, replace, "language <name>", "model <name>", or "last" to reprint the original of the last message (no argument cycles off → append → replace)
+argument-hint: "[on|off|append|replace|language <name>|model <name>|last|status]"
 allowed-tools: Bash("${CLAUDE_PLUGIN_ROOT}"/claudish-ctl.sh:*)
 ---
 
