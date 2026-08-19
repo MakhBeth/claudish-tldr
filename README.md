@@ -6,20 +6,20 @@ Display-only: Claude's reasoning and the transcript keep the original text. On a
 
 ## Requirements
 
-- [ollama](https://ollama.com) running locally (`ollama serve`) with a model pulled, e.g. `ollama pull gemma3:12b`
+- [ollama](https://ollama.com) running locally (`ollama serve`) with the default model pulled: `ollama pull gemma4:26b-mlx` (MLX build, meant for Apple Silicon)
 - `jq` and `curl` on `PATH`
 
 ## Install
 
 ```sh
 claude plugin marketplace add MakhBeth/claudish-to-italian
-claude plugin install claudish-to-italian@davide-plugins
+claude plugin install claudish-to-italian@makhbeth-plugins
 ```
 
-Then point it at a model you have (unless you have the default one):
+To use a different/smaller model:
 
 ```sh
-export CLAUDISH_MODEL=gemma3:12b   # or any ollama model you pulled
+export CLAUDISH_MODEL=gemma4:12b   # or any ollama model you pulled
 ```
 
 If you also use the original English plugin, disable it to avoid a double rewrite:
@@ -33,7 +33,7 @@ claude plugin disable claudish-to-english@gvzdv-plugins
 ```sh
 git clone https://github.com/MakhBeth/claudish-to-italian
 claude plugin marketplace add ./claudish-to-italian
-claude plugin install claudish-to-italian@davide-plugins
+claude plugin install claudish-to-italian@makhbeth-plugins
 ```
 
 ## Config

@@ -1,9 +1,9 @@
 {
-  "name": "davide-plugins",
+  "name": "makhbeth-plugins",
   "owner": {
     "name": "Davide Di Pumpo"
   },
-  "description": "Davide's local Claude Code plugins.",
+  "description": "MakhBeth's Claude Code plugins.",
   "plugins": [
     {
       "name": "claudish-to-italian",
