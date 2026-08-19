@@ -1,10 +1,14 @@
 # claudish-tldr
 
-Fork of [gvzdv/claudish-to-english](https://github.com/gvzdv/claudish-to-english) (v0.1.1, MIT) that shows a **short, simple-language summary** of each Claude Code assistant message, produced by a local LLM via [ollama](https://ollama.com). Default language is English; switch it on the fly with `/claudish language <name>`.
+> **TL;DR** — Claude Code writes walls of text; this adds a two-line summary under each reply (or replaces it entirely), written by a local ollama model in plain words, in any language you pick. Skim the summary, read the original only when it matters. Free, offline, and harmless: the real text is always kept, and the summary never enters Claude's context — zero extra tokens, zero context rot.
 
-Display-only: Claude's reasoning and the transcript keep the original text. On any failure (ollama down, timeout, missing model) it fails open and shows the original message unchanged.
+![A long incident-report answer on the left, and the short claudish-tldr summary of it on the right](assets/original-vs-tldr.png)
 
-> Renamed from `claudish-to-italian` in 0.3.0, when the target language became runtime-configurable (and the default switched from Italian to English). If you installed the old name, reinstall: `claude plugin uninstall claudish-to-italian@makhbeth-plugins && claude plugin marketplace update makhbeth-plugins && claude plugin install claudish-tldr@makhbeth-plugins`.
+Shows a **short, simple-language summary** under each Claude Code assistant message, produced by a local LLM via [ollama](https://ollama.com) — a TL;DR of Claude's wall of text, in the language you pick. Default is English; the `/claudish` command switches language and display mode on the fly, mid-session.
+
+Display-only: Claude's reasoning and the transcript keep the original text, and the summary is never fed back into the model's context — it costs no tokens and can't pollute or degrade the conversation (no context rot). On any failure (ollama down, timeout, missing model) it fails open and shows the original message unchanged.
+
+Fork of [gvzdv/claudish-to-english](https://github.com/gvzdv/claudish-to-english) (v0.1.1, MIT).
 
 ## Requirements
 
@@ -61,3 +65,13 @@ The `/claudish` slash command switches state mid-session (the hooks re-read the 
 The rewrite is display-only, so the original is never lost: press `ctrl+o` in Claude Code to view the whole original chat (the transcript keeps Claude's untouched text), or use `/claudish last` to reprint just the last message — handy in `replace` mode.
 
 Under the hood it writes `~/.claude/claudish-mode` (`append`/`replace`, overrides `CLAUDISH_MODE`), `~/.claude/claudish-lang` (a language name, overrides `CLAUDISH_LANG`, default English) and creates/removes `~/.claude/claudish-off`. You can drive the same files from a script or hotkey: `touch ~/.claude/claudish-off` to pause, remove it to resume, `echo replace > ~/.claude/claudish-mode` to switch mode.
+
+## History
+
+This plugin started as `claudish-to-italian`, a fork that rewrote messages into simple Italian with a hardcoded language. In 0.3.0 the target language became runtime-configurable, the default switched to English, and the plugin was renamed to `claudish-tldr`. If you installed the old name, reinstall:
+
+```sh
+claude plugin uninstall claudish-to-italian@makhbeth-plugins
+claude plugin marketplace update makhbeth-plugins
+claude plugin install claudish-tldr@makhbeth-plugins
+```
