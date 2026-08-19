@@ -10,6 +10,16 @@ Display-only: Claude's reasoning and the transcript keep the original text, and 
 
 Fork of [gvzdv/claudish-to-english](https://github.com/gvzdv/claudish-to-english) (v0.1.1, MIT).
 
+## What's different from claudish-to-english?
+
+The original rewrites every message into plain English, configured once via env vars at launch. This fork turns it into a runtime-controllable summariser:
+
+- **`/claudish` slash command** — everything switches mid-session, no restart: pause/resume, `append`/`replace` display mode, target language, ollama model. The hooks re-read small flag files in `~/.claude` on every message, which is how the frozen-env limitation is bypassed.
+- **Any target language** — the system prompt is parametric (`/claudish language german`, default English) instead of hardcoding English.
+- **Summary, not just simplification** — the prompt asks for a clearly shorter TL;DR (about half the original or less), keeping facts, numbers, and file paths.
+- **`/claudish last`** — reprints the untouched original of the last message from the transcript, the escape hatch for `replace` mode. Such replies carry a `<!-- claudish:original -->` marker the hook strips and never summarises.
+- **Localised separator labels** — "TL;DR:" for English, "In italiano semplice:" for Italian, a generic label for everything else.
+
 ## Requirements
 
 - [ollama](https://ollama.com) running locally (`ollama serve`) with the default model pulled: `ollama pull gemma4:26b-mlx` (MLX build, meant for Apple Silicon)
