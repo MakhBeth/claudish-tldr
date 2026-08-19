@@ -12,7 +12,7 @@
 #   append        original + summary appended (and turn on)
 #   replace       summary only (and turn on)
 #   language X    rewrite into language X, e.g. "language french"
-#                 (no name / "default" resets to Italian; also turns on)
+#                 (no name / "default" resets to English; also turns on)
 #   last          print the ORIGINAL text of the last assistant message, taken
 #                 from the most recent session transcript (useful in replace
 #                 mode; ctrl+o shows the whole original chat)
@@ -30,7 +30,7 @@ LANG_FILE="${CLAUDISH_LANG_FILE:-$HOME/.claude/claudish-lang}"
 current_lang() {
   l=""
   [ -f "$LANG_FILE" ] && l="$(head -c 64 "$LANG_FILE" 2>/dev/null | tr -cd 'A-Za-z -' | head -c 32)"
-  [ -n "$l" ] && printf '%s' "$l" || printf '%s' "${CLAUDISH_LANG:-Italian}"
+  [ -n "$l" ] && printf '%s' "$l" || printf '%s' "${CLAUDISH_LANG:-English}"
 }
 
 current_mode() {

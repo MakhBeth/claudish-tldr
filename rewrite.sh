@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
 # MessageDisplay LLM rewrite hook  (buffer-to-final, fail-open)
-# Fork of claudish-to-english: rewrites into simple ITALIAN instead.
+# Fork of claudish-to-english: summarises into a configurable language (default English).
 #
 # Claude Code fires the MessageDisplay event once PER STREAMED CHUNK of an
 # assistant message. Each fire is a separate process and carries:
@@ -37,7 +37,7 @@
 #                                          append|replace (default
 #                                          ~/.claude/claudish-mode) — lets
 #                                          /claudish switch mode mid-session
-#   CLAUDISH_LANG      <language name> target rewrite language (default Italian)
+#   CLAUDISH_LANG      <language name> target rewrite language (default English)
 #   CLAUDISH_LANG_FILE <path>         file re-read per message that overrides
 #                                          CLAUDISH_LANG (default
 #                                          ~/.claude/claudish-lang) — lets
@@ -84,15 +84,16 @@ NOTICE="${CLAUDISH_NOTICE:-1}"
 # Runtime language override, same file trick as the mode. The value lands
 # inside the LLM system prompt, so it is sanitised to letters/spaces/hyphens
 # and capped — a language name, not free text.
-TARGET_LANG="${CLAUDISH_LANG:-Italian}"
+TARGET_LANG="${CLAUDISH_LANG:-English}"
 lang_file="${CLAUDISH_LANG_FILE:-$HOME/.claude/claudish-lang}"
 if [ -f "$lang_file" ]; then
   l="$(head -c 64 "$lang_file" 2>/dev/null | tr -cd 'A-Za-z -' | head -c 32)"
   [ -n "$l" ] && TARGET_LANG="$l"
 fi
 
-BUF_ROOT="${TMPDIR:-/tmp}/claudish-to-italian"
+BUF_ROOT="${TMPDIR:-/tmp}/claudish-tldr"
 case "$TARGET_LANG" in
+  [Ee]nglish) SEP=$'\n\n────────────────────────\n💬 TL;DR:\n\n' ;;
   [Ii]talian|[Ii]taliano) SEP=$'\n\n────────────────────────\n💬 In italiano semplice:\n\n' ;;
   *) SEP=$'\n\n────────────────────────\n'"💬 In simple $TARGET_LANG:"$'\n\n' ;;
 esac
@@ -266,7 +267,7 @@ if [ -z "$rewrite" ]; then
     else
       why="ollama returned an error: ${err:-unknown}"
     fi
-    note=$'\n\n────────────────────────\n'"⚠️ claudish-to-italian: $why. Showing Claude's original text unchanged. Shown once per session; set CLAUDISH_NOTICE=0 to silence."
+    note=$'\n\n────────────────────────\n'"⚠️ claudish-tldr: $why. Showing Claude's original text unchanged. Shown once per session; set CLAUDISH_NOTICE=0 to silence."
     out="$BUF_ROOT/$sid.$mid.notice"
     if [ "$MODE" = "replace" ]; then
       { printf '%s' "$full"; printf '%s' "$note"; } > "$out" 2>/dev/null

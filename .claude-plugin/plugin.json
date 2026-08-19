@@ -1,10 +1,10 @@
 {
-  "name": "claudish-to-italian",
-  "description": "Shows a simple-Italian rewrite of each Claude Code assistant message, produced by a local LLM (ollama). Display-only: Claude's reasoning and the transcript keep the original text. Fork of gvzdv/claudish-to-english.",
-  "version": "0.2.0",
+  "name": "claudish-tldr",
+  "description": "Shows a short, simple-language summary of each Claude Code assistant message, produced by a local LLM (ollama). Language is switchable on the fly with /claudish (default English). Display-only: Claude's reasoning and the transcript keep the original text. Fork of gvzdv/claudish-to-english.",
+  "version": "0.3.0",
   "author": {
     "name": "Davide Di Pumpo"
   },
   "license": "MIT",
-  "keywords": ["ollama", "local-llm", "hooks", "readability", "italian", "claude-code"]
+  "keywords": ["ollama", "local-llm", "hooks", "readability", "tldr", "summary", "claude-code"]
 }

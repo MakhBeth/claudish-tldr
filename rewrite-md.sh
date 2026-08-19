@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
 # PostToolUse Markdown rewrite hook  (opt-in by directory, fail-open)
-# Fork of claudish-to-english: rewrites into simple ITALIAN instead.
+# Fork of claudish-to-english: summarises into a configurable language (default English).
 #
 # Fires after a Write/Edit and, IF the written file is a Markdown file that
-# lives under CLAUDISH_MD_DIR, rewrites its prose into simple Italian using a
+# lives under CLAUDISH_MD_DIR, rewrites its prose into the target language using a
 # local LLM (ollama). PostToolUse.updatedToolOutput only changes what Claude
 # SEES, not the bytes on disk, so this hook does the file write itself.
 #
@@ -33,7 +33,7 @@
 #   CLAUDISH_MD_DIR    <path>         REQUIRED opt-in. Only .md under here is rewritten.
 #                                     Relative paths resolve against the tool's cwd.
 #   CLAUDISH_MD_MODE   sibling|overwrite   (default sibling)
-#   CLAUDISH_LANG      <language name> target rewrite language (default Italian)
+#   CLAUDISH_LANG      <language name> target rewrite language (default English)
 #   CLAUDISH_LANG_FILE <path>         file re-read per invocation that overrides
 #                                     CLAUDISH_LANG (default ~/.claude/claudish-lang)
 #   CLAUDISH_MD_SUFFIX <word>         sibling infix: NAME.<word>.md (default "plain")
@@ -70,15 +70,15 @@ NOTICE="${CLAUDISH_NOTICE:-1}"
 
 # Runtime language override shared with the display hook (see rewrite.sh):
 # sanitised to letters/spaces/hyphens and capped, since it lands in the prompt.
-TARGET_LANG="${CLAUDISH_LANG:-Italian}"
+TARGET_LANG="${CLAUDISH_LANG:-English}"
 lang_file="${CLAUDISH_LANG_FILE:-$HOME/.claude/claudish-lang}"
 if [ -f "$lang_file" ]; then
   l="$(head -c 64 "$lang_file" 2>/dev/null | tr -cd 'A-Za-z -' | head -c 32)"
   [ -n "$l" ] && TARGET_LANG="$l"
 fi
 
-MARKER="<!-- claudish-to-italian:rewritten -->"
-LOG_ROOT="${TMPDIR:-/tmp}/claudish-to-italian"
+MARKER="<!-- claudish-tldr:rewritten -->"
+LOG_ROOT="${TMPDIR:-/tmp}/claudish-tldr"
 mkdir -p "$LOG_ROOT" 2>/dev/null || true
 
 dbg() { [ "$DEBUG" = "1" ] && printf '%s [%s] %s\n' "$(date '+%H:%M:%S')" "$$" "$*" >> "$LOG_ROOT/debug-md.log" 2>/dev/null; return 0; }
@@ -206,7 +206,7 @@ if [ -z "$rewrite" ]; then
     fi
     if [ -n "$why" ]; then
       : > "$notified" 2>/dev/null || true
-      jq -n --arg m "claudish-to-italian: $why (shown once per session; set CLAUDISH_NOTICE=0 to silence)" \
+      jq -n --arg m "claudish-tldr: $why (shown once per session; set CLAUDISH_NOTICE=0 to silence)" \
         '{systemMessage:$m}' 2>/dev/null
       dbg "emitted setup notice"
       exit 0

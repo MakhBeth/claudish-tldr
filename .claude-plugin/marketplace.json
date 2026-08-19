@@ -6,9 +6,9 @@
   "description": "MakhBeth's Claude Code plugins.",
   "plugins": [
     {
-      "name": "claudish-to-italian",
+      "name": "claudish-tldr",
       "source": "./",
-      "description": "Shows a simple-Italian rewrite of each Claude Code assistant message, produced by a local LLM (ollama). Display-only.",
+      "description": "Shows a short, simple-language summary of each Claude Code assistant message, produced by a local LLM (ollama). Language switchable on the fly. Display-only.",
       "category": "productivity"
     }
   ]
