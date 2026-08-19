@@ -32,6 +32,16 @@
 #                                          ~/.claude/claudish-off) — lets a
 #                                          hotkey/script toggle mid-session
 #   CLAUDISH_MODE      append|replace display strategy (default append)
+#   CLAUDISH_MODE_FILE <path>         file re-read per message that overrides
+#                                          CLAUDISH_MODE when it contains
+#                                          append|replace (default
+#                                          ~/.claude/claudish-mode) — lets
+#                                          /claudish switch mode mid-session
+#   CLAUDISH_LANG      <language name> target rewrite language (default Italian)
+#   CLAUDISH_LANG_FILE <path>         file re-read per message that overrides
+#                                          CLAUDISH_LANG (default
+#                                          ~/.claude/claudish-lang) — lets
+#                                          /claudish language X switch mid-session
 #   CLAUDISH_MODEL     <ollama model> (default gemma4:26b-mlx)
 #   CLAUDISH_OLLAMA    <base url>     (default http://localhost:11434)
 #   CLAUDISH_MIN_CHARS <n>            skip messages shorter than this
@@ -53,6 +63,16 @@ ENABLED="${CLAUDISH_ENABLED:-1}"
 # every invocation. Create it to pause rewrites instantly; remove it to resume.
 [ -f "${CLAUDISH_OFF_FILE:-$HOME/.claude/claudish-off}" ] && ENABLED=0
 MODE="${CLAUDISH_MODE:-append}"
+# Runtime mode override: like the off-file, a file can be re-read per message
+# while the env cannot. Written by /claudish (claudish-ctl.sh); only the two
+# known values are honoured, anything else falls back to the env/default.
+mode_file="${CLAUDISH_MODE_FILE:-$HOME/.claude/claudish-mode}"
+if [ -f "$mode_file" ]; then
+  case "$(cat "$mode_file" 2>/dev/null | tr -d '[:space:]')" in
+    append)  MODE=append ;;
+    replace) MODE=replace ;;
+  esac
+fi
 MODEL="${CLAUDISH_MODEL:-gemma4:26b-mlx}"
 OLLAMA="${CLAUDISH_OLLAMA:-http://localhost:11434}"
 MIN_CHARS="${CLAUDISH_MIN_CHARS:-200}"
@@ -61,8 +81,21 @@ LLM_TIMEOUT="${CLAUDISH_TIMEOUT:-45}"
 DEBUG="${CLAUDISH_DEBUG:-0}"
 NOTICE="${CLAUDISH_NOTICE:-1}"
 
+# Runtime language override, same file trick as the mode. The value lands
+# inside the LLM system prompt, so it is sanitised to letters/spaces/hyphens
+# and capped — a language name, not free text.
+TARGET_LANG="${CLAUDISH_LANG:-Italian}"
+lang_file="${CLAUDISH_LANG_FILE:-$HOME/.claude/claudish-lang}"
+if [ -f "$lang_file" ]; then
+  l="$(head -c 64 "$lang_file" 2>/dev/null | tr -cd 'A-Za-z -' | head -c 32)"
+  [ -n "$l" ] && TARGET_LANG="$l"
+fi
+
 BUF_ROOT="${TMPDIR:-/tmp}/claudish-to-italian"
-SEP=$'\n\n────────────────────────\n💬 In italiano semplice:\n\n'
+case "$TARGET_LANG" in
+  [Ii]talian|[Ii]taliano) SEP=$'\n\n────────────────────────\n💬 In italiano semplice:\n\n' ;;
+  *) SEP=$'\n\n────────────────────────\n'"💬 In simple $TARGET_LANG:"$'\n\n' ;;
+esac
 
 mkdir -p "$BUF_ROOT" 2>/dev/null || true
 
@@ -115,8 +148,26 @@ mkdir -p "$mdir" 2>/dev/null || pass_through
 printf '%s' "$payload" | jq -j '.delta // ""' > "$mdir/$(printf '%08d' "$idx").part" 2>/dev/null || pass_through
 dbg "chunk idx=$idx final=$final mid=$mid mode=$MODE"
 
+# ---- opt-out marker -------------------------------------------------------
+# A message that BEGINS with this marker is never rewritten (used by
+# /claudish last, whose whole point is reprinting an original — summarising
+# it again would defeat it). The marker itself is stripped from the display.
+SKIP_MARK='<!-- claudish:original -->'
+strip_mark() { s="${1#"$SKIP_MARK"}"; s="${s#$'\n'}"; s="${s#$'\n'}"; printf '%s' "$s"; }
+if [ "$idx" = "0" ]; then
+  case "$(cat "$mdir/00000000.part" 2>/dev/null)" in
+    "$SKIP_MARK"*) : > "$mdir/skip" 2>/dev/null ;;
+  esac
+fi
+
 # ---- non-final chunks ----------------------------------------------------
 if [ "$final" != "true" ]; then
+  # Marked message in append mode: stream it, but hide the marker in chunk 0.
+  if [ -f "$mdir/skip" ] && [ "$MODE" != "replace" ] && [ "$idx" = "0" ]; then
+    out="$BUF_ROOT/$sid.$mid.strip"
+    strip_mark "$(cat "$mdir/00000000.part" 2>/dev/null)" > "$out" 2>/dev/null && emit "$out"
+    pass_through
+  fi
   # append: let the original stream through untouched.
   # replace: suppress the streamed original; the whole rewrite lands on final.
   if [ "$MODE" = "replace" ]; then emit_empty; else pass_through; fi
@@ -133,6 +184,18 @@ prose_len="$(printf '%s' "$full" \
 dbg "final: prose_len=$prose_len min=$MIN_CHARS mode=$MODE full_bytes=${#full}"
 
 cleanup() { rm -rf "$mdir" 2>/dev/null || true; }
+
+# Marked message -> never rewrite; re-show the original without the marker.
+# (replace mode blanked every previous chunk, so it needs the whole message;
+# append mode streamed chunk 0 already stripped, so only the final delta.)
+if [ -f "$mdir/skip" ]; then
+  dbg "skip: original-reprint marker"
+  out="$BUF_ROOT/$sid.$mid.orig"
+  if [ "$MODE" = "replace" ]; then src="$full"; else src="$(cat "$final_part" 2>/dev/null)"; fi
+  cleanup
+  strip_mark "$src" > "$out" 2>/dev/null && emit "$out"
+  pass_through
+fi
 
 # Below threshold -> do not rewrite.
 if [ "${prose_len:-0}" -lt "$MIN_CHARS" ]; then
@@ -155,7 +218,7 @@ if [ "$STUB" = "1" ]; then
   rewrite="STUB-SIMPLIFIED ✦ mode=$MODE chunks=$nparts prose_len=$prose_len ✦ (this text came from the hook, not the model)"
   dbg "stub rewrite"
 else
-  sys="You rewrite the assistant's message as a SHORT summary in simple, clear ITALIAN. The message may be in English or any other language; the rewrite must always be in Italian. This is a simplification, NOT a translation: it must be clearly shorter than the original — aim for half its length or less. Keep the key facts, decisions, numbers, and file paths; drop repetitions, hedges, and secondary detail. Keep technical terms, commands, and identifiers in their original form. Use short sentences and everyday Italian words. Omit fenced code blocks (the original is shown alongside). Output ONLY the rewritten message with no preamble, labels, or commentary."
+  sys="You rewrite the assistant's message as a SHORT summary in simple, clear $TARGET_LANG. The message may be in English or any other language; the rewrite must always be in $TARGET_LANG. This is a simplification, NOT a translation: it must be clearly shorter than the original — aim for half its length or less. Keep the key facts, decisions, numbers, and file paths; drop repetitions, hedges, and secondary detail. Keep technical terms, commands, and identifiers in their original form. Use short sentences and everyday words. Omit fenced code blocks (the original is shown alongside). Output ONLY the rewritten message with no preamble, labels, or commentary."
 
   # Context only: the original user question the assistant is answering.
   # Truncated to 800 codepoints inside jq (safe on multibyte boundaries).

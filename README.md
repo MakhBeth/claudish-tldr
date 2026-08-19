@@ -40,4 +40,22 @@ claude plugin install claudish-to-italian@makhbeth-plugins
 
 Same env vars as the original (`CLAUDISH_MODEL`, `CLAUDISH_MODE`, `CLAUDISH_MIN_CHARS`, `CLAUDISH_OFF_FILE`, `CLAUDISH_MD_DIR`, ...) — see the headers of `rewrite.sh` and `rewrite-md.sh`. Default model: `gemma4:26b-mlx`.
 
-Toggle mid-session: `touch ~/.claude/claudish-off` to pause, remove it to resume.
+## Switching on the fly
+
+The `/claudish` slash command switches state mid-session (the hooks re-read two flag files on every message, so no restart is needed):
+
+```
+/claudish            # cycle: off -> append -> replace -> off
+/claudish off        # pause, show originals only
+/claudish on         # resume with the last mode
+/claudish append     # original + Italian summary (default)
+/claudish replace    # Italian summary only
+/claudish status     # show the current state
+/claudish language french    # rewrite into another language
+/claudish language default   # back to Italian
+/claudish last       # reprint the ORIGINAL text of the last assistant message
+```
+
+The rewrite is display-only, so the original is never lost: press `ctrl+o` in Claude Code to view the whole original chat (the transcript keeps Claude's untouched text), or use `/claudish last` to reprint just the last message — handy in `replace` mode.
+
+Under the hood it writes `~/.claude/claudish-mode` (`append`/`replace`, overrides `CLAUDISH_MODE`), `~/.claude/claudish-lang` (a language name, overrides `CLAUDISH_LANG`, default Italian) and creates/removes `~/.claude/claudish-off`. You can drive the same files from a script or hotkey: `touch ~/.claude/claudish-off` to pause, remove it to resume, `echo replace > ~/.claude/claudish-mode` to switch mode.

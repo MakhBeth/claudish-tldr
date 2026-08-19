@@ -33,6 +33,9 @@
 #   CLAUDISH_MD_DIR    <path>         REQUIRED opt-in. Only .md under here is rewritten.
 #                                     Relative paths resolve against the tool's cwd.
 #   CLAUDISH_MD_MODE   sibling|overwrite   (default sibling)
+#   CLAUDISH_LANG      <language name> target rewrite language (default Italian)
+#   CLAUDISH_LANG_FILE <path>         file re-read per invocation that overrides
+#                                     CLAUDISH_LANG (default ~/.claude/claudish-lang)
 #   CLAUDISH_MD_SUFFIX <word>         sibling infix: NAME.<word>.md (default "plain")
 #   CLAUDISH_MODEL     <ollama model> (default gemma4:26b-mlx)
 #   CLAUDISH_OLLAMA    <base url>     (default http://localhost:11434)
@@ -64,6 +67,15 @@ STUB="${CLAUDISH_STUB:-0}"
 LLM_TIMEOUT="${CLAUDISH_MD_TIMEOUT:-150}"
 DEBUG="${CLAUDISH_DEBUG:-0}"
 NOTICE="${CLAUDISH_NOTICE:-1}"
+
+# Runtime language override shared with the display hook (see rewrite.sh):
+# sanitised to letters/spaces/hyphens and capped, since it lands in the prompt.
+TARGET_LANG="${CLAUDISH_LANG:-Italian}"
+lang_file="${CLAUDISH_LANG_FILE:-$HOME/.claude/claudish-lang}"
+if [ -f "$lang_file" ]; then
+  l="$(head -c 64 "$lang_file" 2>/dev/null | tr -cd 'A-Za-z -' | head -c 32)"
+  [ -n "$l" ] && TARGET_LANG="$l"
+fi
 
 MARKER="<!-- claudish-to-italian:rewritten -->"
 LOG_ROOT="${TMPDIR:-/tmp}/claudish-to-italian"
@@ -162,7 +174,7 @@ if [ "$STUB" = "1" ]; then
   rewrite="STUB-SIMPLIFIED-MD ✦ mode=$MD_MODE prose_len=$prose_len ✦"$'\n\n'"$body"
   dbg "stub rewrite"
 else
-  sys="You rewrite Markdown prose into simple, clear ITALIAN. The text may be in English or any other language; the rewrite must always be in Italian. Keep every fact, name, number, link, and file path. Keep technical terms, commands, and identifiers in their original form. Keep all Markdown structure — headings, lists, tables, and links. Do NOT change fenced code blocks or any YAML frontmatter; reproduce them exactly. Use short sentences and everyday Italian words. Output ONLY the rewritten Markdown, with no preamble, labels, or commentary."
+  sys="You rewrite Markdown prose into simple, clear $TARGET_LANG. The text may be in English or any other language; the rewrite must always be in $TARGET_LANG. Keep every fact, name, number, link, and file path. Keep technical terms, commands, and identifiers in their original form. Keep all Markdown structure — headings, lists, tables, and links. Do NOT change fenced code blocks or any YAML frontmatter; reproduce them exactly. Use short sentences and everyday words. Output ONLY the rewritten Markdown, with no preamble, labels, or commentary."
   req="$(jq -n --arg m "$MODEL" --arg s "$sys" --arg u "$body" \
         '{model:$m,stream:false,think:false,options:{temperature:0.3},messages:[{role:"system",content:$s},{role:"user",content:$u}]}' 2>/dev/null)"
   [ -n "$req" ] || pass_through "req build failed"
