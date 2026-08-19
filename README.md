@@ -431,6 +431,8 @@ Notes:
 | `CLAUDISH_ENABLED` | `1` | Master switch. `0` = pass everything through. Read once at session start. |
 | `CLAUDISH_OFF_FILE` | `~/.claude/claudish-off` | Runtime kill switch. While this file exists, rewrites pause — re-checked every message, so unlike env vars it works mid-session. See [Toggling mid-session](#toggling-mid-session). |
 | `CLAUDISH_MODE` | `append` | `append` or `replace` (display hook). |
+| `CLAUDISH_STYLE` | *(unset)* | Rewrite-style preset for the display hook: `tldr` (clearly shorter summary) or `5y` (explain like I'm five). Unset/other = the default plain-language rewrite. A usable `CLAUDISH_PROMPT_FILE` wins over any style. |
+| `CLAUDISH_RUNTIME_FILE` | `~/.claude/claudish-runtime` | Runtime override file written by [`/claudish`](#the-claudish-command): `key=value` lines (`mode=`, `style=`, `language=`, `model=`) that win over the matching env vars while present — re-read every message. |
 | `CLAUDISH_PROMPT_FILE` | *(unset)* | Path to a file whose contents replace the display hook's system prompt (whole prompt, not merged). Empty/unreadable falls back to the built-in default. See [Customizing the rewrite prompt](#customizing-the-rewrite-prompt). |
 | `CLAUDISH_LANG` | *(unset)* | Language to rewrite into, e.g. `Esperanto`. Unset falls back to the `language` key in `.claude/settings*.json`; with neither set, the rewrite keeps the input's language. Empty ignores the settings key; `English` forces English. See [Output language](#output-language). |
 | `CLAUDISH_PROVIDER` | `ollama` | `ollama`, `anthropic`, or `openai` — which LLM serves rewrites (both hooks). |
@@ -482,6 +484,49 @@ the fail-open path leaves Claude's original text untouched. Point a hotkey at a
 two-line toggle script to flip rewrites from the keyboard across all running
 sessions at once. Override the path with `CLAUDISH_OFF_FILE`.
 
+### The `/claudish` command
+
+The plugin ships a slash command that drives the flag files for you, so
+everything switches mid-session without restarting:
+
+```
+/claudish                    # cycle: off -> append -> replace -> off
+/claudish on                 # resume rewrites (keeps the current mode)
+/claudish off                # pause rewrites (originals only; both hooks)
+/claudish append             # original + rewrite appended (and turn on)
+/claudish replace            # rewrite only (and turn on)
+/claudish style tldr         # short summary instead of a full rewrite
+/claudish style 5y           # explain like I'm five
+/claudish style default      # back to the plain-language rewrite
+/claudish language french    # rewrite into French from the next message
+/claudish language default   # back to the env / settings language
+/claudish model gemma4:12b   # switch the rewrite model
+/claudish model default      # back to the env / provider default
+/claudish status             # show the current state
+/claudish last               # reprint the ORIGINAL text of the last message
+```
+
+Under the hood, `on`/`off` drive the off-file described above, and every other
+subcommand writes a `key=value` line into ONE runtime file next to it
+(`~/.claude/claudish-runtime`, path overridable with `CLAUDISH_RUNTIME_FILE`):
+`mode=`, `style=`, `language=`, `model=`. The hooks re-read it on every
+message, so the switch applies from the next assistant message on — and to
+every running session at once. Env vars keep working as the launch-time
+defaults; a key, while present, wins over the corresponding env var, and
+resetting everything to `default` removes the file.
+
+The `style` presets only swap the display hook's **built-in** prompt (the
+on-screen label follows: `💬 TL;DR:` / `💬 Like you're five:`); the language
+still applies, and a custom `CLAUDISH_PROMPT_FILE` always wins over any style.
+The Markdown file hook is not affected by styles.
+
+`/claudish last` exists because the rewrite is display-only: the transcript
+always keeps Claude's original text, and the command reprints the last
+assistant message from it — handy in `replace` mode when you want to check the
+full original of just one reply (`ctrl+o` shows the whole original chat). Such
+reprints start with a `<!-- claudish:original -->` marker line that tells the
+display hook not to rewrite that reply; the marker is stripped from view.
+
 ### Reasoning models
 
 The ollama request sends `"think": false`, and openai-provider requests to
@@ -512,6 +557,9 @@ claudish-to-english/
 │   └── marketplace.json    # so the repo can be added as a marketplace directly
 ├── hooks/
 │   └── hooks.json          # MessageDisplay -> rewrite.sh ; PostToolUse -> rewrite-md.sh
+├── commands/
+│   └── claudish.md         # /claudish slash command (runtime switching)
+├── claudish-ctl.sh         # flag-file switcher backing /claudish
 ├── rewrite.sh              # display-rewrite hook
 ├── rewrite-md.sh           # markdown-file rewrite hook (opt-in)
 ├── providers.sh            # provider layer (ollama/anthropic/openai), sourced by both hooks

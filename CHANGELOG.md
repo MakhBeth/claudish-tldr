@@ -5,6 +5,31 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- `/claudish` slash command for runtime switching (`commands/claudish.md` +
+  `claudish-ctl.sh`). `on`/`off` drive the existing off-file; every other
+  subcommand writes a `key=value` line into ONE runtime file
+  (`~/.claude/claudish-runtime`, path: `CLAUDISH_RUNTIME_FILE`) that the hooks
+  re-read on every message, so everything switches mid-session without
+  restarting: `append`/`replace` (`mode=`), `style tldr|5y|default` (`style=`),
+  `language <name>` (`language=`, cleaned by `lang.sh` like every other
+  source), `model <name>` (`model=`, sanitised in `providers.sh`, both hooks),
+  `status`, and a bare `/claudish` that cycles off → append → replace. Env
+  vars keep working as launch-time defaults; a key, while present, wins.
+- Rewrite-style presets for the display hook (`CLAUDISH_STYLE` or the runtime
+  file's `style=` key): `tldr` produces a clearly shorter summary, `5y`
+  explains like you're five; the on-screen label follows (`💬 TL;DR:`,
+  `💬 Like you're five:`). Styles replace only the built-in base prompt — the
+  output language still applies, and a usable `CLAUDISH_PROMPT_FILE` wins over
+  any style. The Markdown hook is unaffected.
+- `/claudish last` reprints the ORIGINAL text of the last assistant message
+  from the session transcript (the rewrite is display-only, so the transcript
+  always has it) — useful in `replace` mode. Such reprints start with a
+  `<!-- claudish:original -->` marker line that the display hook strips and
+  never rewrites.
+
 ## [0.4.0] - 2026-08-14
 
 ### Added
