@@ -1,23 +1,10 @@
 {
-  "name": "claudish-to-english",
-  "description": "Shows a plain-English rewrite of each Claude Code assistant message, produced by a local LLM (ollama, default), the Anthropic API, or any OpenAI-compatible API. Display-only: Claude's reasoning and the transcript keep the original text.",
-  "version": "0.3.0",
+  "name": "claudish-to-italian",
+  "description": "Shows a simple-Italian rewrite of each Claude Code assistant message, produced by a local LLM (ollama). Display-only: Claude's reasoning and the transcript keep the original text. Fork of gvzdv/claudish-to-english.",
+  "version": "0.1.1",
   "author": {
-    "name": "Mike Gvozdev",
-    "email": "mv.gvozdev@gmail.com",
-    "url": "https://github.com/gvzdv"
+    "name": "Davide Di Pumpo"
   },
-  "homepage": "https://github.com/gvzdv/claudish-to-english#readme",
-  "repository": "https://github.com/gvzdv/claudish-to-english",
   "license": "MIT",
-  "keywords": [
-    "ollama",
-    "local-llm",
-    "anthropic",
-    "openai",
-    "hooks",
-    "readability",
-    "plain-language",
-    "claude-code"
-  ]
+  "keywords": ["ollama", "local-llm", "hooks", "readability", "italian", "claude-code"]
 }

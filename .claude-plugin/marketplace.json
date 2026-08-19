@@ -1,16 +1,14 @@
 {
-  "name": "gvzdv-plugins",
+  "name": "davide-plugins",
   "owner": {
-    "name": "Mike Gvozdev",
-    "email": "mv.gvozdev@gmail.com",
-    "url": "https://github.com/gvzdv"
+    "name": "Davide Di Pumpo"
   },
-  "description": "Mike Gvozdev's Claude Code plugins.",
+  "description": "Davide's local Claude Code plugins.",
   "plugins": [
     {
-      "name": "claudish-to-english",
+      "name": "claudish-to-italian",
       "source": "./",
-      "description": "Shows a plain-English rewrite of each Claude Code assistant message, produced by a local LLM (ollama, default), the Anthropic API, or any OpenAI-compatible API. Display-only.",
+      "description": "Shows a simple-Italian rewrite of each Claude Code assistant message, produced by a local LLM (ollama). Display-only.",
       "category": "productivity"
     }
   ]
